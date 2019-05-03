@@ -34,6 +34,7 @@ cdef extern from "beeview_api.h" namespace "BeeView":
 		#Methods
 		vector[vector[vector[float]]] render()
 		vector[vector[float]] renderAgent()
+		vector[vector[float]] getBeeEye3Dcoordinates()
 
 		void setPosition(float, float, float)
 		void getPosition(float &, float &, float &)

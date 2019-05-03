@@ -67,6 +67,9 @@ cdef class Renderer:
 		img = (np.array(img) * 255).astype(np.uint8)
 		return img
 		#return Image.fromarray(img)
+    
+	def get_bee_eye_3D_coordinates(self):
+		return np.array(self.C_Class.getBeeEye3Dcoordinates())
 	
 	def render_agent(self):
 		"""Renders a flat array of image data.

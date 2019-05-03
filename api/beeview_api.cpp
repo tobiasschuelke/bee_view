@@ -86,6 +86,13 @@ namespace BeeView
 
 		return returnImage;
 	}
+    
+	std::vector<std::vector<float>> BeeViewApplication::getBeeEye3Dcoordinates()
+    {
+		std::vector<std::vector<float>> coordinates = impl_->m_renderer.getBeeEye3Dcoordinates();
+        
+        return coordinates;
+    }
 
 	std::vector<std::vector<float>> BeeViewApplication::renderAgent()
 	{

@@ -698,17 +698,34 @@ namespace BeeView {
 
 		void testSimple()
 		{
-			BeeViewApplication beeView = BeeViewApplication("D:\\Documents\\bachelorarbeit\\bee_view\\data\\hessen_2016\\scene.obj", "D:\\Documents\\bachelorarbeit\\bee_view\\data\\ommatidia.csv", true);
+			BeeViewApplication beeView = BeeViewApplication("E:\\Tobias\\bee_view\\data\\test_scene\\test_scene.obj", "E:\\Tobias\\bee_view\\data\\ommatidia.csv", true);
 			beeView.setPosition(0, 0, 0.5);
 			float h = beeView.getDistance(0, 0, 0, 0, -1, 0);
-			beeView.setPosition(0.0f, (0.0f - h) + 7.0f, 0.0f); // 7m above ground
-			beeView.setDirection(0.0f, 0.0f, -1.0f);
+			beeView.setPosition(0.0f, (0.0f - h) + 2.0f, 0.0f); // 2m above ground
+			beeView.setDirection(0.0f, -0.5f, 1.0f);
 			beeView.setMode(0);
 
 			Image img = beeView.render();
 
 			img.saveToPPM("test_simple.ppm");
 
+		}
+
+		void testCoordinates()
+		{
+			BeeViewApplication beeView = BeeViewApplication("E:\\Tobias\\bee_view\\data\\test_scene\\test_scene.obj", "E:\\Tobias\\bee_view\\data\\ommatidia.csv", true);
+			beeView.setPosition(0, 0, 0.5);
+			float h = beeView.getDistance(0, 0, 0, 0, -1, 0);
+			beeView.setPosition(0.0f, (0.0f - h) + 2.0f, 0.0f); // 2m above ground
+			beeView.setDirection(0.0f, -0.5f, 1.0f);
+			beeView.setMode(0);
+
+			std::vector<std::vector<float>> coords = beeView.getBeeEye3Dcoordinates();
+
+			for (int i = 0; i < coords.size(); i++)
+			{
+				std::cout << coords[i][0] << ", " << coords[i][1] << ", " << coords[i][2] << ", " << coords[i][3] << ", " << coords[i][4] << std::endl;
+			}
 		}
 
 	}

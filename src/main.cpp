@@ -15,7 +15,7 @@ int main()
 	//BeeView::Test::testCameraNoScene();
 	//
 	//BeeView::Test::testApi();
-	BeeView::Test::testSimple();
+	//BeeView::Test::testSimple();
 
 	//BeeView::Test::test_sampler2();
 	//BeeView::Test::testCameraNoScene();
@@ -23,6 +23,8 @@ int main()
 	//BeeView::Test::testBeeEyeCam();
 
 	//BeeView::Test::testGimbalLock();
+
+	BeeView::Test::testCoordinates();
 	std::cout << "Finished.";
 
 	int x;

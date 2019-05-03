@@ -516,4 +516,243 @@ namespace BeeView {
 			return -1;
 		return ray.tfar;
 	}
+
+	std::vector<std::vector<float>> Renderer::getBeeEye3Dcoordinates()
+	{
+		
+		std::shared_ptr<BeeEyeCamera> camera = std::static_pointer_cast<BeeEyeCamera>(m_camera);
+
+		// create black image
+		/*std::unique_ptr<Image> img = std::make_unique<Image>(camera->getImageWidth(), camera->getImageHeight());
+
+		// draw bee eye on image
+		renderBeeEye(img, Side::LEFT);
+
+		renderBeeEye(img, Side::RIGHT);*/
+
+		std::vector<std::vector<float>> coords = calcBeeEyeCoordinates(Side::LEFT);
+		std::vector<std::vector<float>> coordsRight = calcBeeEyeCoordinates(Side::RIGHT);
+
+		coords.insert(coords.end(), coordsRight.begin(), coordsRight.end());
+
+		return coords;
+	}
+
+	std::vector<std::vector<float>> Renderer::calcBeeEyeCoordinates(Side side)
+	{
+		std::vector<std::vector<float>> out;
+		
+		int x;
+		int y;
+
+		Vec2f center;
+
+		// need beeeyecamera methods
+		std::shared_ptr<BeeEyeCamera> camera = std::static_pointer_cast<BeeEyeCamera>(m_camera);
+
+		int ommatidiumSize = camera->getOmmatidiumSize();
+
+		BeeEye::Ptr beeEye;
+		if (side == Side::LEFT)
+			beeEye = camera->m_leftEye;
+		else
+			beeEye = camera->m_rightEye;
+
+		// draw the ommatidia
+		for each (const auto & ommatidium in beeEye->m_ommatidia)
+		{
+
+			// fix for "nice" display at elevation = 0 (model returns too many ommatidia for e=0), delete last ommatidium at e=0
+			if (ommatidium.m_y == 0)
+			{
+				if (beeEye->m_side == Side::RIGHT && (ommatidium.m_x == -5 || ommatidium.m_x == -4))
+					continue;
+				if (beeEye->m_side == Side::LEFT && (ommatidium.m_x == 5 || ommatidium.m_x == 4))
+					continue;
+			}
+
+			// get main dir
+			Vec3f dir = ommatidium.getDirVector();
+
+			Color color = Color(); // 0,0,0
+
+//#if defined(SINGLE_RAY_TEXTURE_SHADING) || defined(MATERIAL_KD_SHADING) || defined(UV_SHADING)
+
+			// transform to world coordinates
+			Vec3f rayDir = m_camera->m_viewMatrix.linear() * dir;
+			rayDir.normalize();
+
+			// shoot ray and store color in array
+			std::vector<float> coords = shootRayCoord(rayDir);
+
+			if (coords[0] == -10000 && coords[1] == -10000 && coords[0] == -10000)
+			{
+				continue;
+			}
+
+			//std::cout << coords[0] << ", " << coords[1] << ", " << coords[2] << std::endl;
+
+//#endif
+
+/*#ifdef TEXTURE_SHADING
+
+			std::vector<Color> colorSamples;
+
+			// for all samplepoints: shoot ray, get color.
+			for (Vec2f& angle : camera->m_sampler.m_samplePoints)
+			{
+				// get dir
+				//Vec3f sampleDir = dir;
+
+				// rotate dir vector bei x degrees to right
+				//m_camera->rotateVecY(sampleDir, angle(0));
+
+				// rotate dir vector bei y degrees up
+				//m_camera->rotateVecX(sampleDir, angle(1));
+
+				Vec3f sampleDir = ommatidium.getDirVector(angle(0), angle(1));
+
+				// transform to world coordinates
+				Vec3f rayDir = m_camera->m_viewMatrix.linear() * sampleDir;
+				rayDir.normalize();
+
+				// shoot ray and store color in array
+				colorSamples.push_back(shootRay(rayDir));
+			}
+
+			color = Color(); // 0,0,0
+
+			// weight each color in colorSamples and add up
+			for (int i = 0; i < colorSamples.size(); i++)
+			{
+				float& w = camera->m_sampler.m_weights[i];
+				color.m_r += w * colorSamples[i].m_r;
+				color.m_g += w * colorSamples[i].m_g;
+				color.m_b += w * colorSamples[i].m_b;
+			}
+#endif*/
+
+			// convert the relative coords of ommatidium to image coords (see convert2ImageCoords for details)
+			convert2ImageCoords(ommatidium, beeEye, x, y);
+
+			int rel_x = x * ommatidiumSize;
+			int rel_y = y * ommatidiumSize;
+
+			if (beeEye->m_side == Side::RIGHT)
+			{
+				// shift every second row, to simulate hexagonal shape
+				if (ommatidiumSize > 1 && y % 2 == 0)
+					rel_x += ommatidiumSize / 2;
+
+				// also add offset to right side
+				rel_x += (camera->getImageWidth() / 2);
+
+				// space between the two eyes
+				rel_x += ommatidiumSize;
+
+				if (ommatidiumSize == 1 && y % 2 == 1)
+					rel_x -= 1;
+			}
+			else // left eye
+			{
+				if (ommatidiumSize > 1 && y % 2 == 1)
+					rel_x += ommatidiumSize / 2;
+
+				if (ommatidiumSize == 1 && y % 2 == 1)
+					rel_x += 1;
+			}
+
+			coords.push_back(rel_x);
+			coords.push_back(rel_y);
+
+			out.push_back(coords);
+		}
+
+		return out;
+	}
+
+	std::vector<float> Renderer::shootRayCoord(const Vec3f& dir)
+	{
+		std::vector<float> coords;
+
+		Vec3f cam_pos = m_camera->getPosition();
+
+		/* initialize ray */
+		RTCRay ray;
+
+		ray.org[0] = cam_pos(0);
+		ray.org[1] = cam_pos(1);
+		ray.org[2] = cam_pos(2);
+		ray.dir[0] = dir(0);
+		ray.dir[1] = dir(1);
+		ray.dir[2] = dir(2);
+
+		ray.tnear = 0.0f;
+		ray.tfar = std::numeric_limits<float>::infinity();
+		ray.geomID = RTC_INVALID_GEOMETRY_ID;
+		ray.primID = RTC_INVALID_GEOMETRY_ID;
+		ray.mask = -1;
+		ray.time = 0;
+
+		/* intersect ray with scene */
+		rtcIntersect(m_scene->m_rtcscene, ray);
+		/* shade pixels */
+
+		// no Objects hit -> Backgroundcolor
+		if (ray.geomID == RTC_INVALID_GEOMETRY_ID)
+		{
+			coords.push_back(-10000);
+			coords.push_back(-10000);
+			coords.push_back(-10000);
+			
+		}
+		else
+		{
+			std::shared_ptr<Mesh> mesh = m_scene->m_objects[ray.geomID]; // get the hit object
+			Triangle* tri = &mesh->triangles[ray.primID]; // get the hit triangle
+
+			if (mesh->texcoords.size() > 0) // if object has tex coords
+			{
+				const Vec3f st0 = mesh->positions[tri->v0]; // get the texcoordinate for vertex 1 
+				const Vec3f st1 = mesh->positions[tri->v1]; // get the texcoordinate for vertex 2 
+				const Vec3f st2 = mesh->positions[tri->v2]; // get the texcoordinate for vertex 3 
+				const float u = ray.u, v = ray.v, w = 1.0f - ray.u - ray.v; // w = 1 - u - v
+				const Vec3f st = w * st0 + u * st1 + v * st2; // calc texture coordinate of hitpoint
+
+				//return mesh->texture->getTexel(st(0), st(1)); // 1.0f - st(1) for lefthanded
+
+				coords.push_back(st[0]);
+				coords.push_back(st[1]);
+				coords.push_back(st[2]);
+			}
+		}
+
+		return coords;
+
+
+#ifdef MATERIAL_KD_SHADING
+		return(Color(m_scene->m_objects[ray.geomID]->texture->Kd));
+#endif	
+
+#ifdef UV_SHADING
+		return Color(ray.u, ray.v, 1.0f - ray.u - ray.v);
+#endif	
+
+		/* Default: texture shading */
+		/*std::shared_ptr<Mesh> mesh = m_scene->m_objects[ray.geomID]; // get the hit object
+		Triangle * tri = &mesh->triangles[ray.primID]; // get the hit triangle
+
+		if (mesh->texcoords.size() > 0) // if object has tex coords
+		{
+			const Vec2f st0 = mesh->texcoords[tri->v0]; // get the texcoordinate for vertex 1 
+			const Vec2f st1 = mesh->texcoords[tri->v1]; // get the texcoordinate for vertex 2 
+			const Vec2f st2 = mesh->texcoords[tri->v2]; // get the texcoordinate for vertex 3 
+			const float u = ray.u, v = ray.v, w = 1.0f - ray.u - ray.v; // w = 1 - u - v
+			const Vec2f st = w * st0 + u * st1 + v * st2; // calc texture coordinate of hitpoint
+
+			return mesh->texture->getTexel(st(0), st(1)); // 1.0f - st(1) for lefthanded
+		}
+
+		return Color(0.0f, 0.0f, 0.0f); // if nothing hit: black*/
+	}
 }
