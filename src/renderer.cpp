@@ -517,7 +517,7 @@ namespace BeeView {
 		return ray.tfar;
 	}
 
-	std::vector<std::vector<float>> Renderer::getBeeEye3Dcoordinates()
+	std::vector<std::vector<std::vector<float>>> Renderer::getBeeEye3Dcoordinates()
 	{
 		
 		std::shared_ptr<BeeEyeCamera> camera = std::static_pointer_cast<BeeEyeCamera>(m_camera);
@@ -530,17 +530,17 @@ namespace BeeView {
 
 		renderBeeEye(img, Side::RIGHT);*/
 
-		std::vector<std::vector<float>> coords = calcBeeEyeCoordinates(Side::LEFT);
-		std::vector<std::vector<float>> coordsRight = calcBeeEyeCoordinates(Side::RIGHT);
+		std::vector<std::vector<std::vector<float>>> coords = calcBeeEyeCoordinates(Side::LEFT);
+		std::vector<std::vector<std::vector<float>>> coordsRight = calcBeeEyeCoordinates(Side::RIGHT);
 
 		coords.insert(coords.end(), coordsRight.begin(), coordsRight.end());
 
 		return coords;
 	}
 
-	std::vector<std::vector<float>> Renderer::calcBeeEyeCoordinates(Side side)
+	std::vector<std::vector<std::vector<float>>> Renderer::calcBeeEyeCoordinates(Side side)
 	{
-		std::vector<std::vector<float>> out;
+		std::vector<std::vector<std::vector<float>>> out;
 		
 		int x;
 		int y;
@@ -560,8 +560,7 @@ namespace BeeView {
 
 		// draw the ommatidia
 		for each (const auto & ommatidium in beeEye->m_ommatidia)
-		{
-
+		{			
 			// fix for "nice" display at elevation = 0 (model returns too many ommatidia for e=0), delete last ommatidium at e=0
 			if (ommatidium.m_y == 0)
 			{
@@ -571,66 +570,8 @@ namespace BeeView {
 					continue;
 			}
 
-			// get main dir
-			Vec3f dir = ommatidium.getDirVector();
-
-			Color color = Color(); // 0,0,0
-
-//#if defined(SINGLE_RAY_TEXTURE_SHADING) || defined(MATERIAL_KD_SHADING) || defined(UV_SHADING)
-
-			// transform to world coordinates
-			Vec3f rayDir = m_camera->m_viewMatrix.linear() * dir;
-			rayDir.normalize();
-
-			// shoot ray and store color in array
-			std::vector<float> coords = shootRayCoord(rayDir);
-
-			if (coords[0] == -10000 && coords[1] == -10000 && coords[0] == -10000)
-			{
-				continue;
-			}
-
-			//std::cout << coords[0] << ", " << coords[1] << ", " << coords[2] << std::endl;
-
-//#endif
-
-/*#ifdef TEXTURE_SHADING
-
-			std::vector<Color> colorSamples;
-
-			// for all samplepoints: shoot ray, get color.
-			for (Vec2f& angle : camera->m_sampler.m_samplePoints)
-			{
-				// get dir
-				//Vec3f sampleDir = dir;
-
-				// rotate dir vector bei x degrees to right
-				//m_camera->rotateVecY(sampleDir, angle(0));
-
-				// rotate dir vector bei y degrees up
-				//m_camera->rotateVecX(sampleDir, angle(1));
-
-				Vec3f sampleDir = ommatidium.getDirVector(angle(0), angle(1));
-
-				// transform to world coordinates
-				Vec3f rayDir = m_camera->m_viewMatrix.linear() * sampleDir;
-				rayDir.normalize();
-
-				// shoot ray and store color in array
-				colorSamples.push_back(shootRay(rayDir));
-			}
-
-			color = Color(); // 0,0,0
-
-			// weight each color in colorSamples and add up
-			for (int i = 0; i < colorSamples.size(); i++)
-			{
-				float& w = camera->m_sampler.m_weights[i];
-				color.m_r += w * colorSamples[i].m_r;
-				color.m_g += w * colorSamples[i].m_g;
-				color.m_b += w * colorSamples[i].m_b;
-			}
-#endif*/
+			std::vector<std::vector<float>> omnatidium_coords;
+			std::vector<float> bee_image_coords;
 
 			// convert the relative coords of ommatidium to image coords (see convert2ImageCoords for details)
 			convert2ImageCoords(ommatidium, beeEye, x, y);
@@ -662,10 +603,77 @@ namespace BeeView {
 					rel_x += 1;
 			}
 
-			coords.push_back(rel_x);
-			coords.push_back(rel_y);
+			bee_image_coords.push_back(rel_x);
+			bee_image_coords.push_back(rel_y);
 
-			out.push_back(coords);
+			omnatidium_coords.push_back(bee_image_coords);
+
+			// get main dir
+			Vec3f dir = ommatidium.getDirVector();
+			
+
+#if defined(SINGLE_RAY_TEXTURE_SHADING) || defined(MATERIAL_KD_SHADING) || defined(UV_SHADING)
+
+			// transform to world coordinates
+			Vec3f rayDir = m_camera->m_viewMatrix.linear() * dir;
+			rayDir.normalize();
+
+			// shoot ray
+			std::vector<float> coords = shootRayCoord(rayDir);
+
+			if (coords[0] == -10000 && coords[1] == -10000 && coords[0] == -10000)
+			{
+				continue;
+			}
+			omnatidium_coords.push_back(coords);
+
+			//std::cout << coords[0] << ", " << coords[1] << ", " << coords[2] << std::endl;
+
+#endif
+
+#ifdef TEXTURE_SHADING
+
+			std::vector<Color> colorSamples;
+
+			// for all samplepoints: shoot ray, get color.
+			for (Vec2f& angle : camera->m_sampler.m_samplePoints)
+			{
+				// get dir
+				//Vec3f sampleDir = dir;
+
+				// rotate dir vector bei x degrees to right
+				//m_camera->rotateVecY(sampleDir, angle(0));
+
+				// rotate dir vector bei y degrees up
+				//m_camera->rotateVecX(sampleDir, angle(1));
+
+				Vec3f sampleDir = ommatidium.getDirVector(angle(0), angle(1));
+
+				// transform to world coordinates
+				Vec3f rayDir = m_camera->m_viewMatrix.linear() * sampleDir;
+				rayDir.normalize();
+
+				// shoot ray
+				std::vector<float> coords = shootRayCoord(rayDir);
+
+				if (coords[0] == -10000 && coords[1] == -10000 && coords[0] == -10000)
+				{
+					continue;
+				}
+				omnatidium_coords.push_back(coords);
+			}
+
+			// weight each color in colorSamples and add up
+			/*for (int i = 0; i < colorSamples.size(); i++)
+			{
+				float& w = camera->m_sampler.m_weights[i];
+				color.m_r += w * colorSamples[i].m_r;
+				color.m_g += w * colorSamples[i].m_g;
+				color.m_b += w * colorSamples[i].m_b;
+			}*/
+#endif
+
+			out.push_back(omnatidium_coords);
 		}
 
 		return out;

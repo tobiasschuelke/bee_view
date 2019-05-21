@@ -40,7 +40,7 @@ namespace BeeView {
 		/* gets distance to next object in direction of dir. returns -1 if no object is in direction of dir. */
 		float getDistance(Vec3f pos, Vec3f dir);
 
-		std::vector<std::vector<float>> getBeeEye3Dcoordinates();
+		std::vector<std::vector<std::vector<float>>> getBeeEye3Dcoordinates();
 
 	private:
 
@@ -99,7 +99,7 @@ namespace BeeView {
 			return;
 		}
 
-		std::vector<std::vector<float>> Renderer::calcBeeEyeCoordinates(Side side);
+		std::vector<std::vector<std::vector<float>>> Renderer::calcBeeEyeCoordinates(Side side);
 
 		std::vector<float> shootRayCoord(const Vec3f& dir);
 

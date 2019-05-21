@@ -720,11 +720,18 @@ namespace BeeView {
 			beeView.setDirection(0.0f, -0.5f, 1.0f);
 			beeView.setMode(0);
 
-			std::vector<std::vector<float>> coords = beeView.getBeeEye3Dcoordinates();
+			std::cout << "Calculating coordinates.";
 
-			for (int i = 0; i < coords.size(); i++)
+			std::vector<std::vector<std::vector<float>>> ommatidium_coords = beeView.getBeeEye3Dcoordinates();
+
+			std::cout << "coords size: " << ommatidium_coords.size();
+
+			for (int j = 0; j < ommatidium_coords.size(); j++)
 			{
-				std::cout << coords[i][0] << ", " << coords[i][1] << ", " << coords[i][2] << ", " << coords[i][3] << ", " << coords[i][4] << std::endl;
+				for (int i = 0; i < ommatidium_coords[j].size(); i++)
+				{
+					std::cout << ommatidium_coords[j][i][0] << ", " << ommatidium_coords[j][i][1] << std::endl;
+				}
 			}
 		}
 

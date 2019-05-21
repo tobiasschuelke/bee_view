@@ -57,7 +57,7 @@ namespace BeeView
 		/* renders an image with the current active camera and the settings specified be the camera */
 		std::vector<std::vector<std::vector<float>>> render();
         
-		std::vector<std::vector<float>> BeeViewApplication::getBeeEye3Dcoordinates();
+		std::vector<std::vector<std::vector<float>>> BeeViewApplication::getBeeEye3Dcoordinates();
         
 		/* renders the image according to parameters in beeEyeCamera, returns
 		12 arrays: the first 6 for the left eye.
