@@ -1,4 +1,11 @@
 
+# Modified version of Bee Vision Simulator
+
+This fork of the bee view library adds a method get_bee_eye_3D_coordinates() to the renderer. This library creates bee view images by shooting ray casts from an agent to the viewing direction. The new method returns coordinates of intersection points between raycasts and a 3D model. These intersection points are used by the library to determine colors of each pixel of the bee view image.
+
+This modified version is used in https://github.com/tobiasschuelke/NeuroCopter-Analysis. That repository also contains precompiled .pyd files of this fork.
+
+
 # Bee Vision Simulator
 
 Bee_view is a rendering engine based on raycasting that simulates insect vision.
